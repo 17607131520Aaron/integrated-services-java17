@@ -48,10 +48,10 @@ build/
 Thumbs.db
 
 # Logs and temp
-# logs/
-# *.tmp
-# *.swp
-# *.swo
+logs/
+*.tmp
+*.swp
+*.swo
 
 # Spring tooling caches
 .sts4-cache/
