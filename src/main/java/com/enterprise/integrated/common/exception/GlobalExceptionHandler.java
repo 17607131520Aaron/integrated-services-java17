@@ -8,11 +8,14 @@ import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
+import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
@@ -33,29 +36,31 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     /**
-     * 业务异常处理
+     * 处理业务异常
      */
     @ExceptionHandler(BusinessException.class)
-    @ResponseStatus(HttpStatus.OK)
-    public Result<Void> handleBusinessException(BusinessException e, HttpServletRequest request) {
-        logger.warn("业务异常: {} - {}", request.getRequestURI(), e.getMessage());
-        return Result.error(e.getCode(), e.getMessage());
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public Result<Object> handleBusinessException(BusinessException ex, HttpServletRequest request) {
+        log.warn("业务异常 - URI: {}, Message: {}", request.getRequestURI(), ex.getMessage());
+        return Result.error(ex.getBusinessCodeValue(), ex.getMessage(), ex.getData());
     }
 
     /**
-     * 参数校验异常处理 - @Valid
+     * 处理参数验证异常
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Result<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e, HttpServletRequest request) {
-        String message = e.getBindingResult().getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
-                .collect(Collectors.joining(", "));
-        logger.warn("参数校验异常: {} - {}", request.getRequestURI(), message);
-        return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
+    public Result<Void> handleValidationException(MethodArgumentNotValidException e, HttpServletRequest request) {
+        log.warn("参数验证失败 [{}]: {}", request.getRequestURI(), e.getMessage());
+        
+        StringBuilder errorMsg = new StringBuilder();
+        e.getBindingResult().getFieldErrors().forEach(error -> {
+            errorMsg.append(error.getField()).append(": ").append(error.getDefaultMessage()).append("; ");
+        });
+        
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), errorMsg.toString());
     }
 
     /**
@@ -67,7 +72,7 @@ public class GlobalExceptionHandler {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
-        logger.warn("参数绑定异常: {} - {}", request.getRequestURI(), message);
+        log.warn("参数绑定异常: {} - {}", request.getRequestURI(), message);
         return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
     }
 
@@ -80,7 +85,7 @@ public class GlobalExceptionHandler {
         String message = e.getConstraintViolations().stream()
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(", "));
-        logger.warn("约束违反异常: {} - {}", request.getRequestURI(), message);
+        log.warn("约束违反异常: {} - {}", request.getRequestURI(), message);
         return Result.error(ResultCode.PARAM_ERROR.getCode(), message);
     }
 
@@ -88,44 +93,45 @@ public class GlobalExceptionHandler {
      * 缺少请求参数异常处理
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Result<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException e, HttpServletRequest request) {
-        String message = "缺少必要参数: " + e.getParameterName();
-        logger.warn("缺少请求参数异常: {} - {}", request.getRequestURI(), message);
-        return Result.error(ResultCode.PARAM_MISSING.getCode(), message);
+    public Result<Void> handleMissingParameterException(MissingServletRequestParameterException e, HttpServletRequest request) {
+        log.warn("缺少请求参数 [{}]: {}", request.getRequestURI(), e.getMessage());
+        return Result.error(ResultCode.PARAM_MISSING.getCode(), "缺少必要参数: " + e.getParameterName());
     }
 
     /**
      * 方法参数类型不匹配异常处理
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    @ResponseStatus(HttpStatus.BAD_REQUEST)
-    public Result<Void> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
-        String message = "参数类型不匹配: " + e.getName();
-        logger.warn("方法参数类型不匹配异常: {} - {}", request.getRequestURI(), message);
-        return Result.error(ResultCode.PARAM_INVALID.getCode(), message);
+    public Result<Void> handleTypeMismatchException(MethodArgumentTypeMismatchException e, HttpServletRequest request) {
+        log.warn("参数类型转换异常 [{}]: {}", request.getRequestURI(), e.getMessage());
+        return Result.error(ResultCode.PARAM_INVALID.getCode(), "参数 " + e.getName() + " 类型不正确");
     }
 
     /**
      * 请求方法不支持异常处理
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
-    @ResponseStatus(HttpStatus.METHOD_NOT_ALLOWED)
-    public Result<Void> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
-        String message = "不支持的请求方法: " + e.getMethod();
-        logger.warn("请求方法不支持异常: {} - {}", request.getRequestURI(), message);
-        return Result.error(ResultCode.METHOD_NOT_ALLOWED.getCode(), message);
+    public Result<Void> handleMethodNotSupportedException(HttpRequestMethodNotSupportedException e, HttpServletRequest request) {
+        log.warn("请求方法不支持 [{}]: {}", request.getRequestURI(), e.getMessage());
+        return Result.error(ResultCode.METHOD_NOT_ALLOWED.getCode(), "请求方法 " + e.getMethod() + " 不支持");
+    }
+
+    /**
+     * 媒体类型不支持异常处理
+     */
+    @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
+    public Result<Void> handleMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e, HttpServletRequest request) {
+        log.warn("媒体类型不支持 [{}]: {}", request.getRequestURI(), e.getMessage());
+        return Result.error(ResultCode.PARAM_ERROR.getCode(), "不支持的媒体类型: " + e.getContentType());
     }
 
     /**
      * 404异常处理
      */
     @ExceptionHandler(NoHandlerFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    public Result<Void> handleNoHandlerFoundException(NoHandlerFoundException e, HttpServletRequest request) {
-        String message = "请求的资源不存在: " + e.getRequestURL();
-        logger.warn("404异常: {} - {}", request.getRequestURI(), message);
-        return Result.error(ResultCode.NOT_FOUND.getCode(), message);
+    public Result<Void> handleNotFoundException(NoHandlerFoundException e, HttpServletRequest request) {
+        log.warn("404异常 [{}]: 接口不存在", request.getRequestURI());
+        return Result.error(ResultCode.NOT_FOUND);
     }
 
     /**
@@ -134,7 +140,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public Result<Void> handleAuthenticationException(AuthenticationException e, HttpServletRequest request) {
-        logger.warn("认证异常: {} - {}", request.getRequestURI(), e.getMessage());
+        log.warn("认证异常: {} - {}", request.getRequestURI(), e.getMessage());
         if (e instanceof BadCredentialsException) {
             return Result.error(ResultCode.UNAUTHORIZED.getCode(), "用户名或密码错误");
         }
@@ -145,10 +151,27 @@ public class GlobalExceptionHandler {
      * 授权异常处理
      */
     @ExceptionHandler(AccessDeniedException.class)
-    @ResponseStatus(HttpStatus.FORBIDDEN)
     public Result<Void> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
-        logger.warn("授权异常: {} - {}", request.getRequestURI(), e.getMessage());
-        return Result.error(ResultCode.PERMISSION_DENIED);
+        log.warn("访问拒绝 [{}]: {}", request.getRequestURI(), e.getMessage());
+        return Result.error(ResultCode.FORBIDDEN);
+    }
+
+    /**
+     * 数据完整性违反异常处理
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public Result<Void> handleDataIntegrityViolationException(DataIntegrityViolationException e, HttpServletRequest request) {
+        log.error("数据完整性违反 [{}]: {}", request.getRequestURI(), e.getMessage(), e);
+        return Result.error(ResultCode.DATABASE_ERROR.getCode(), "数据操作失败，请检查数据完整性");
+    }
+
+    /**
+     * 重复键异常处理
+     */
+    @ExceptionHandler(DuplicateKeyException.class)
+    public Result<Void> handleDuplicateKeyException(DuplicateKeyException e, HttpServletRequest request) {
+        log.warn("重复键异常 [{}]: {}", request.getRequestURI(), e.getMessage());
+        return Result.error(ResultCode.DATA_ALREADY_EXISTS);
     }
 
     /**
@@ -157,17 +180,16 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleRuntimeException(RuntimeException e, HttpServletRequest request) {
-        logger.error("运行时异常: {} - {}", request.getRequestURI(), e.getMessage(), e);
+        log.error("运行时异常: {} - {}", request.getRequestURI(), e.getMessage(), e);
         return Result.error(ResultCode.INTERNAL_ERROR);
     }
 
     /**
-     * 通用异常处理
+     * 处理其他异常
      */
     @ExceptionHandler(Exception.class)
-    @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public Result<Void> handleException(Exception e, HttpServletRequest request) {
-        logger.error("系统异常: {} - {}", request.getRequestURI(), e.getMessage(), e);
+        log.error("系统异常 [{}]: {}", request.getRequestURI(), e.getMessage(), e);
         return Result.error(ResultCode.INTERNAL_ERROR);
     }
 }

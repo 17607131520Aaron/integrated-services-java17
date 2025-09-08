@@ -94,6 +94,13 @@ public class Result<T> implements Serializable {
     }
 
     /**
+     * 失败返回带状态码、消息和数据
+     */
+    public static <T> Result<T> error(Integer code, String message, T data) {
+        return new Result<>(code, message, data);
+    }
+
+    /**
      * 判断是否成功
      */
     public boolean isSuccess() {
