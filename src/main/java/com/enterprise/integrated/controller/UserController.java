@@ -31,7 +31,7 @@ public class UserController {
 
     @Operation(summary = "分页查询用户", description = "分页查询用户列表")
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('perm:system:user:query') or hasRole('ADMIN')")
     public IPage<User> pageUsers(
             @Parameter(description = "页码") @RequestParam(defaultValue = "1") Integer current,
             @Parameter(description = "每页大小") @RequestParam(defaultValue = "10") Integer size,
@@ -45,21 +45,21 @@ public class UserController {
 
     @Operation(summary = "根据ID查询用户", description = "根据用户ID查询用户详细信息")
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or authentication.principal.userId == #id")
+    @PreAuthorize("hasAuthority('perm:system:user:query') or hasRole('ADMIN') or authentication.principal.userId == #id")
     public User getUserById(@Parameter(description = "用户ID") @PathVariable Long id) {
         return userService.getById(id);
     }
 
     @Operation(summary = "创建用户", description = "创建新用户")
     @PostMapping
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('perm:system:user:add') or hasRole('ADMIN')")
     public User createUser(@Valid @RequestBody UserDTO userDTO) {
         return userService.createUser(userDTO);
     }
 
     @Operation(summary = "更新用户", description = "更新用户信息")
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or authentication.principal.userId == #id")
+    @PreAuthorize("hasAuthority('perm:system:user:edit') or hasRole('ADMIN') or authentication.principal.userId == #id")
     public User updateUser(
             @Parameter(description = "用户ID") @PathVariable Long id,
             @Valid @RequestBody UserDTO userDTO) {
@@ -68,14 +68,14 @@ public class UserController {
 
     @Operation(summary = "删除用户", description = "删除用户(逻辑删除)")
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('perm:system:user:delete') or hasRole('ADMIN')")
     public void deleteUser(@Parameter(description = "用户ID") @PathVariable Long id) {
         userService.removeById(id);
     }
 
     @Operation(summary = "启用/禁用用户", description = "更新用户状态")
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('perm:system:user:edit') or hasRole('ADMIN')")
     public void updateUserStatus(
             @Parameter(description = "用户ID") @PathVariable Long id,
             @Parameter(description = "状态(0:禁用,1:启用)") @RequestParam Integer status) {
@@ -84,7 +84,7 @@ public class UserController {
 
     @Operation(summary = "重置密码", description = "重置用户密码")
     @PatchMapping("/{id}/password")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAuthority('perm:system:user:edit') or hasRole('ADMIN')")
     public void resetPassword(
             @Parameter(description = "用户ID") @PathVariable Long id,
             @Parameter(description = "新密码") @RequestParam String newPassword) {

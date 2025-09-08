@@ -92,12 +92,15 @@ public class AuthServiceImpl implements AuthService {
             Long userId = validateToken(token);
             if (userId != null) {
                 // 将令牌加入黑名单
-                redisTemplate.opsForValue().set(
-                    TOKEN_BLACKLIST_PREFIX + token, 
-                    "blacklisted", 
-                    jwtUtils.getExpiration() / 1000, 
-                    TimeUnit.SECONDS
-                );
+                long remainingSeconds = jwtUtils.getRemainingSeconds(token);
+                if (remainingSeconds > 0) {
+                    redisTemplate.opsForValue().set(
+                        TOKEN_BLACKLIST_PREFIX + token, 
+                        "blacklisted", 
+                        remainingSeconds, 
+                        TimeUnit.SECONDS
+                    );
+                }
 
                 // 删除刷新令牌
                 redisTemplate.delete(REFRESH_TOKEN_PREFIX + userId);
@@ -177,6 +180,11 @@ public class AuthServiceImpl implements AuthService {
 
             // 验证令牌
             if (jwtUtils.validateToken(token)) {
+                // 仅允许access令牌
+                String type = jwtUtils.getTokenType(token);
+                if (!"access".equals(type)) {
+                    return null;
+                }
                 return jwtUtils.getUserIdFromToken(token);
             }
         } catch (Exception e) {

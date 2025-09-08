@@ -2,6 +2,7 @@ package com.enterprise.integrated.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -17,17 +18,24 @@ import java.util.Arrays;
 @Configuration
 public class CorsConfig {
 
+    @Value("${cors.allowed-origins:}")
+    private String allowedOrigins;
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         
-        // 允许的源
-        configuration.setAllowedOriginPatterns(Arrays.asList(
-            "http://localhost:*",
-            "https://localhost:*",
-            "http://127.0.0.1:*",
-            "https://127.0.0.1:*"
-        ));
+        // 允许的源（支持通过配置指定白名单，未配置时允许本地开发）
+        if (allowedOrigins != null && !allowedOrigins.isEmpty()) {
+            configuration.setAllowedOriginPatterns(Arrays.asList(allowedOrigins.split(",")));
+        } else {
+            configuration.setAllowedOriginPatterns(Arrays.asList(
+                "http://localhost:*",
+                "https://localhost:*",
+                "http://127.0.0.1:*",
+                "https://127.0.0.1:*"
+            ));
+        }
         
         // 允许的HTTP方法
         configuration.setAllowedMethods(Arrays.asList(
@@ -62,7 +70,8 @@ public class CorsConfig {
         configuration.setMaxAge(3600L);
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/api/**", configuration);
+        // 注意：Spring不在这里自动加上context-path，按业务路径注册即可
+        source.registerCorsConfiguration("/**", configuration);
         
         return source;
     }

@@ -16,6 +16,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import io.jsonwebtoken.Claims;
 
 /**
  * JWT认证过滤器
@@ -49,6 +50,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             // 验证令牌
             Long userId = authService.validateToken(token);
             if (userId != null) {
+                // 校验令牌类型：仅允许access令牌
+                try {
+                    Claims claims = (Claims) jwtUtils.getClass().getDeclaredMethod("getClaimsFromToken", String.class)
+                            .invoke(jwtUtils, token);
+                    Object type = claims.get("type");
+                    if (type == null || !"access".equals(String.valueOf(type))) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+                } catch (Exception ignored) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+
                 String username = jwtUtils.getUsernameFromToken(token);
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
                 

@@ -6,11 +6,9 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
-import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Arrays;
 
 /**
  * Swagger/OpenAPI 配置
@@ -25,10 +23,7 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI() {
         return new OpenAPI()
                 .info(apiInfo())
-                .servers(Arrays.asList(
-                    new Server().url("http://localhost:8080").description("本地开发环境"),
-                    new Server().url("https://api.example.com").description("生产环境")
-                ))
+                // 移除硬编码 servers，交由前端或网关感知，避免端口/context-path 偏差
                 .addSecurityItem(new SecurityRequirement().addList("JWT"))
                 .components(new io.swagger.v3.oas.models.Components()
                     .addSecuritySchemes("JWT", new SecurityScheme()

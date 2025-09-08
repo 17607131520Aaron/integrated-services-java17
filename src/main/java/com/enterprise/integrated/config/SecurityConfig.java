@@ -11,8 +11,13 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.AuthenticationEntryPoint;
+import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import com.enterprise.integrated.common.result.Result;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * Spring Security 配置类
@@ -46,6 +51,19 @@ public class SecurityConfig {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        AuthenticationEntryPoint authenticationEntryPoint = (request, response, authException) -> {
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(objectMapper.writeValueAsString(Result.error(401, "未认证或令牌无效")));
+        };
+
+        AccessDeniedHandler accessDeniedHandler = (request, response, accessDeniedException) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json;charset=UTF-8");
+            response.getWriter().write(objectMapper.writeValueAsString(Result.error(403, "无访问权限")));
+        };
         http
                 // 禁用CSRF
                 .csrf(AbstractHttpConfigurer::disable)
@@ -57,20 +75,19 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // 公开访问的端点
                         .requestMatchers(
-                                "/api/auth/**",           // 认证相关接口（在 context-path 下）
-                                "/actuator/**",          // 监控端点（管理端点基于 management.base-path，一般为 /actuator）
-                                "/druid/**",             // Druid监控
-                                "/doc.html",             // API文档入口
-                                "/swagger-ui/**",        // Swagger UI 静态资源
-                                "/v3/api-docs/**",       // OpenAPI 文档
-                                "/webjars/**",           // Webjars 资源
-                                "/favicon.ico",          // 站点图标
-                                "/error"                 // 错误页面
+                                "/auth/**",
+                                "/favicon.ico",
+                                "/error"
                         ).permitAll()
-                        // 健康检查端点
+                        // 仅健康检查放行
                         .requestMatchers("/actuator/health").permitAll()
                         // 其他所有请求需要认证
                         .anyRequest().authenticated()
+                )
+                // 统一异常返回为JSON
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(authenticationEntryPoint)
+                        .accessDeniedHandler(accessDeniedHandler)
                 )
                 // 添加JWT过滤器
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

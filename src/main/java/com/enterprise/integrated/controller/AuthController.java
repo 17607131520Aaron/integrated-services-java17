@@ -39,7 +39,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Operation(summary = "用户登出")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("isAuthenticated()")
     @OperationLog(value = "用户登出", type = OperationLog.OperationType.LOGOUT)
     public void logout(@RequestHeader("Authorization") String token) {
         authService.logout(token);
@@ -54,7 +54,7 @@ public class AuthController {
 
     @GetMapping("/me")
     @Operation(summary = "获取当前用户信息")
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("isAuthenticated()")
     @RateLimit(key = "current", count = 20, time = 60, limitType = RateLimit.LimitType.USER)
     public UserDTO getCurrentUser() {
         return authService.getCurrentUser();

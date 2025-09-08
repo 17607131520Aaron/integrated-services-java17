@@ -19,7 +19,7 @@ import java.util.Map;
  * @version 1.0.0
  */
 @RestController
-@RequestMapping("/api/health")
+@RequestMapping("/health")
 @IgnoreResponseWrapper
 public class HealthController {
 

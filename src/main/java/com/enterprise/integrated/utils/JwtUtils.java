@@ -131,6 +131,24 @@ public class JwtUtils {
     }
 
     /**
+     * 获取令牌类型（access/refresh）
+     */
+    public String getTokenType(String token) {
+        Claims claims = getClaimsFromToken(token);
+        Object type = claims.get("type");
+        return type == null ? null : String.valueOf(type);
+    }
+
+    /**
+     * 计算令牌剩余有效期（秒）
+     */
+    public long getRemainingSeconds(String token) {
+        Date exp = getExpirationDateFromToken(token);
+        long remainMs = exp.getTime() - System.currentTimeMillis();
+        return Math.max(0, remainMs / 1000);
+    }
+
+    /**
      * 检查令牌是否过期
      * 
      * @param token JWT令牌

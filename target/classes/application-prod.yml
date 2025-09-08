@@ -12,6 +12,14 @@ spring:
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
 
+  # 生产环境关闭 Druid Web 监控与过滤器（如需开启请配合内网与强口令）
+  datasource:
+    druid:
+      web-stat-filter:
+        enabled: false
+      stat-view-servlet:
+        enabled: false
+
   cloud:
     nacos:
       discovery:
@@ -27,6 +35,16 @@ logging:
     root: WARN
     com.enterprise.integrated: INFO
     org.springframework.security: WARN
+# 限制 Actuator 暴露范围（生产）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: never
   file:
     name: /var/log/integrated-services/application.log
 

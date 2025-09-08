@@ -140,7 +140,14 @@ public class OperationLogAspect {
                 try {
                     Object[] args = joinPoint.getArgs();
                     if (args != null && args.length > 0) {
-                        operationLog.setRequestParams(objectMapper.writeValueAsString(args));
+                        String json = objectMapper.writeValueAsString(args);
+                        // 简单脱敏常见敏感字段
+                        json = json.replaceAll("\\\"password\\\"\\s*:\\s*\\\".*?\\\"", "\"password\":\"******\"")
+                                   .replaceAll("\\\"oldPassword\\\"\\s*:\\s*\\\".*?\\\"", "\"oldPassword\":\"******\"")
+                                   .replaceAll("\\\"newPassword\\\"\\s*:\\s*\\\".*?\\\"", "\"newPassword\":\"******\"")
+                                   .replaceAll("\\\"idCard\\\"\\s*:\\s*\\\"(\\w{4})\\w+(\\w{4})\\\"", "\"idCard\":\"$1********$2\"")
+                                   .replaceAll("\\\"phone\\\"\\s*:\\s*\\\"(\\d{3})\\d{4}(\\d{4})\\\"", "\"phone\":\"$1****$2\"");
+                        operationLog.setRequestParams(json);
                     }
                 } catch (Exception e) {
                     operationLog.setRequestParams("参数序列化失败: " + e.getMessage());

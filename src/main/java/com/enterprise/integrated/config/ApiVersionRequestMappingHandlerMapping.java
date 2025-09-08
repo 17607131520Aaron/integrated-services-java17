@@ -40,6 +40,12 @@ public class ApiVersionRequestMappingHandlerMapping extends RequestMappingHandle
         return info;
     }
 
+    @Override
+    public int getOrder() {
+        // 提高优先级，确保版本前缀映射优先生效
+        return -10;
+    }
+
     private RequestMappingInfo createApiVersionInfo(ApiVersion annotation, RequestCondition<?> customCondition) {
         String[] patterns = new String[annotation.value().length];
         for (int i = 0; i < annotation.value().length; i++) {

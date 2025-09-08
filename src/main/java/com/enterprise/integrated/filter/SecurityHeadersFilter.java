@@ -32,18 +32,20 @@ public class SecurityHeadersFilter implements Filter {
         // X-XSS-Protection: XSS保护
         httpResponse.setHeader("X-XSS-Protection", "1; mode=block");
         
-        // Strict-Transport-Security: 强制HTTPS
-        httpResponse.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+        // Strict-Transport-Security: 仅在HTTPS下设置
+        if (request instanceof jakarta.servlet.http.HttpServletRequest) {
+            jakarta.servlet.http.HttpServletRequest httpRequest = (jakarta.servlet.http.HttpServletRequest) request;
+            if ("https".equalsIgnoreCase(httpRequest.getScheme())) {
+                httpResponse.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+            }
+        }
         
-        // Content-Security-Policy: 内容安全策略
-        httpResponse.setHeader("Content-Security-Policy", 
-            "default-src 'self'; " +
-            "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-            "style-src 'self' 'unsafe-inline'; " +
-            "img-src 'self' data: https:; " +
-            "font-src 'self' https:; " +
-            "connect-src 'self'; " +
-            "frame-ancestors 'none'");
+        // Content-Security-Policy: 内容安全策略（默认较严格，开发环境可放宽）
+        String csp = System.getProperty("spring.profiles.active", System.getenv().getOrDefault("SPRING_PROFILES_ACTIVE", "dev"))
+                .contains("prod")
+                ? "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self'; frame-ancestors 'none'"
+                : "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self'; frame-ancestors 'none'";
+        httpResponse.setHeader("Content-Security-Policy", csp);
         
         // Referrer-Policy: 引用策略
         httpResponse.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
@@ -56,10 +58,11 @@ public class SecurityHeadersFilter implements Filter {
             "payment=(), " +
             "usb=()");
         
-        // Cache-Control: 缓存控制
+        // Cache-Control: 缓存控制（根据URI是否以业务前缀开头，无需context-path）
         if (request instanceof jakarta.servlet.http.HttpServletRequest) {
             jakarta.servlet.http.HttpServletRequest httpRequest = (jakarta.servlet.http.HttpServletRequest) request;
-            if (httpRequest.getServletPath().startsWith("/api/")) {
+            String uri = httpRequest.getRequestURI();
+            if (uri.startsWith("/")) {
                 httpResponse.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
                 httpResponse.setHeader("Pragma", "no-cache");
                 httpResponse.setHeader("Expires", "0");

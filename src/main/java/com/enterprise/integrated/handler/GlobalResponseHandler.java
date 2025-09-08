@@ -44,8 +44,15 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
             return false;
         }
         
-        // 已经是Result类型的不需要再包装
+        // 已经是Result类型或ResponseEntity包装的Result不需要再包装
         if (returnType.getParameterType() == Result.class) {
+            return false;
+        }
+        try {
+            if (org.springframework.http.ResponseEntity.class.isAssignableFrom(returnType.getParameterType())) {
+                return false;
+            }
+        } catch (Exception ignored) {
             return false;
         }
         
@@ -55,6 +62,15 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
             return false;
         }
         
+        // 文件/资源下载类不包装
+        Class<?> type = returnType.getParameterType();
+        if (org.springframework.core.io.Resource.class.isAssignableFrom(type)
+                || byte[].class.isAssignableFrom(type)
+                || org.springframework.http.ResponseEntity.class.isAssignableFrom(type)
+                || org.springframework.core.io.InputStreamSource.class.isAssignableFrom(type)) {
+            return false;
+        }
+
         return true;
     }
 
