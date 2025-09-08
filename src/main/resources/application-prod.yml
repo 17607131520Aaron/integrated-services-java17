@@ -1,24 +1,16 @@
-# Production Environment Configuration
+# Production Environment Configuration (与预发一致的模式，地址通过环境变量区分)
 spring:
   datasource:
     url: jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/${DB_NAME:integrated_services}?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD:123456789}
-    
+
   data:
     redis:
       host: ${REDIS_HOST:localhost}
       port: ${REDIS_PORT:6379}
       password: ${REDIS_PASSWORD:}
       database: ${REDIS_DATABASE:0}
-
-  # 生产环境关闭 Druid Web 监控与过滤器（如需开启请配合内网与强口令）
-  datasource:
-    druid:
-      web-stat-filter:
-        enabled: false
-      stat-view-servlet:
-        enabled: false
 
   cloud:
     nacos:
@@ -29,13 +21,23 @@ spring:
         enabled: true
         server-addr: ${NACOS_SERVER:localhost:8848}
 
-# Logging for Production
 logging:
   level:
     root: WARN
     com.enterprise.integrated: INFO
     org.springframework.security: WARN
-# 限制 Actuator 暴露范围（生产）
+  file:
+    name: /var/log/integrated-services/application.log
+
+knife4j:
+  enable: false
+  production: true
+
+spring.cloud.sentinel:
+  enabled: true
+  transport:
+    dashboard: ${SENTINEL_DASHBOARD:localhost:8080}
+
 management:
   endpoints:
     web:
@@ -45,16 +47,3 @@ management:
   endpoint:
     health:
       show-details: never
-  file:
-    name: /var/log/integrated-services/application.log
-
-# Knife4j for Production
-knife4j:
-  enable: false
-  production: true
-
-# Sentinel for Production
-spring.cloud.sentinel:
-  enabled: true
-  transport:
-    dashboard: ${SENTINEL_DASHBOARD:localhost:8080}
