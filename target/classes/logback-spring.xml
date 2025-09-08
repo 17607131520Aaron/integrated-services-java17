@@ -6,7 +6,7 @@
         
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>logs/integrated-services.log</file>
-            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
                 <fileNamePattern>logs/integrated-services.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
                 <maxFileSize>100MB</maxFileSize>
                 <maxHistory>30</maxHistory>
@@ -30,7 +30,7 @@
     <springProfile name="prod">
         <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
             <file>/var/log/integrated-services/application.log</file>
-            <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
                 <fileNamePattern>/var/log/integrated-services/application.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
                 <maxFileSize>200MB</maxFileSize>
                 <maxHistory>60</maxHistory>

@@ -45,15 +45,12 @@ public class ApiVersionRequestMappingHandlerMapping extends RequestMappingHandle
         for (int i = 0; i < annotation.value().length; i++) {
             patterns[i] = VERSION_PREFIX + annotation.value()[i];
         }
-        
-        return RequestMappingInfo.paths(patterns)
-                .methods()
-                .params()
-                .headers()
-                .consumes()
-                .produces()
-                .mappingName("")
-                .customCondition(customCondition)
-                .build();
+
+        RequestMappingInfo.Builder builder = RequestMappingInfo.paths(patterns).customCondition(customCondition);
+        // 保持与当前 HandlerMapping 相同的 PathPattern 解析设置
+        RequestMappingInfo.BuilderConfiguration options = new RequestMappingInfo.BuilderConfiguration();
+        options.setPatternParser(getPatternParser());
+        builder.options(options);
+        return builder.build();
     }
 }

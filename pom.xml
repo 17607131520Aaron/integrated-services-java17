@@ -32,6 +32,7 @@
         <mybatis-plus.version>3.5.3.2</mybatis-plus.version>
         <druid.version>1.2.20</druid.version>
         <mysql.version>8.0.33</mysql.version>
+        <h2.version>2.2.224</h2.version>
         
         <!-- Cache -->
         <redisson.version>3.24.3</redisson.version>
@@ -111,6 +112,8 @@
             <artifactId>mysql-connector-java</artifactId>
             <version>${mysql.version}</version>
         </dependency>
+
+        <!-- 移除 H2 测试依赖，测试将使用 MySQL -->
 
         <!-- Redis -->
         <dependency>

@@ -9,14 +9,10 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.web.cors.CorsConfigurationSource;
-
-import java.util.Arrays;
 
 /**
  * Spring Security 配置类
@@ -35,13 +31,7 @@ public class SecurityConfig {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
     }
 
-    /**
-     * 密码编码器
-     */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+    // PasswordEncoder 由 PasswordConfig 提供
 
     /**
      * 认证管理器
@@ -60,25 +50,25 @@ public class SecurityConfig {
                 // 禁用CSRF
                 .csrf(AbstractHttpConfigurer::disable)
                 // 启用CORS
-                .cors(cors -> cors.disable())
+                .cors(Customizer.withDefaults())
                 // 会话管理 - 无状态
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 请求授权配置
                 .authorizeHttpRequests(auth -> auth
                         // 公开访问的端点
                         .requestMatchers(
-                                "/api/auth/**",           // 认证相关接口
-                                "/api/actuator/**",       // 监控端点
-                                "/api/druid/**",          // Druid监控
-                                "/api/doc.html",          // API文档
-                                "/api/swagger-ui/**",     // Swagger UI
-                                "/api/v3/api-docs/**",    // OpenAPI文档
-                                "/api/webjars/**",        // 静态资源
-                                "/api/favicon.ico",       // 图标
-                                "/api/error"              // 错误页面
+                                "/api/auth/**",           // 认证相关接口（在 context-path 下）
+                                "/actuator/**",          // 监控端点（管理端点基于 management.base-path，一般为 /actuator）
+                                "/druid/**",             // Druid监控
+                                "/doc.html",             // API文档入口
+                                "/swagger-ui/**",        // Swagger UI 静态资源
+                                "/v3/api-docs/**",       // OpenAPI 文档
+                                "/webjars/**",           // Webjars 资源
+                                "/favicon.ico",          // 站点图标
+                                "/error"                 // 错误页面
                         ).permitAll()
                         // 健康检查端点
-                        .requestMatchers("/api/actuator/health").permitAll()
+                        .requestMatchers("/actuator/health").permitAll()
                         // 其他所有请求需要认证
                         .anyRequest().authenticated()
                 )
@@ -88,31 +78,5 @@ public class SecurityConfig {
         return http.build();
     }
 
-    /**
-     * CORS配置
-     */
-    @Bean
-    public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        
-        // 允许的源
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
-        
-        // 允许的HTTP方法
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        
-        // 允许的头部
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        
-        // 允许携带凭证
-        configuration.setAllowCredentials(true);
-        
-        // 预检请求的缓存时间
-        configuration.setMaxAge(3600L);
-
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
-        
-        return source;
-    }
+    // CORS 具体规则由 `CorsConfig` 提供，这里仅启用支持
 }

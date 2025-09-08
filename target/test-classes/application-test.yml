@@ -1,10 +1,10 @@
 # Test Environment Configuration
 spring:
   datasource:
-    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
-    driver-class-name: org.h2.Driver
-    username: sa
-    password: 
+    url: jdbc:mysql://localhost:3306/integrated-services-test?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=false&serverTimezone=GMT%2B8
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 123456789
     
   h2:
     console:
@@ -12,8 +12,8 @@ spring:
       
   jpa:
     hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+      ddl-auto: none
+    show-sql: false
     
   data:
     redis:
@@ -38,3 +38,8 @@ jwt:
 # Knife4j for Test
 knife4j:
   enable: false
+
+# Disable Redisson AutoConfig in tests
+spring.autoconfigure:
+  exclude:
+    - org.redisson.spring.starter.RedissonAutoConfigurationV2

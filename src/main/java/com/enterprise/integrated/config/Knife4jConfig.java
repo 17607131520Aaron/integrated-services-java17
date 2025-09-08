@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -16,8 +17,9 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class Knife4jConfig {
 
-    @Bean
-    public OpenAPI customOpenAPI() {
+    @Bean(name = "knife4jOpenAPI")
+    @Primary
+    public OpenAPI knife4jOpenAPI() {
         return new OpenAPI()
                 .info(new Info()
                         .title("企业级集成服务API")

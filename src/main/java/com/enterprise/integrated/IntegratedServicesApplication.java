@@ -33,9 +33,9 @@ public class IntegratedServicesApplication {
             
             ========================================
             🚀 企业级集成服务启动成功！
-            📖 API文档地址: http://localhost:8080/api/doc.html
-            📊 监控面板: http://localhost:8080/api/actuator
-            💾 数据库监控: http://localhost:8080/api/druid
+            📖 API文档地址: http://localhost:9090/api/doc.html
+            📊 监控面板: http://localhost:9090/api/actuator
+            💾 数据库监控: http://localhost:9090/api/druid
             ========================================
             
             """);
