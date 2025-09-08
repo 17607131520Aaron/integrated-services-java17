@@ -6,6 +6,7 @@ import com.enterprise.integrated.entity.Permission;
 import com.enterprise.integrated.dto.MenuNode;
 import com.enterprise.integrated.dto.MenuSortItem;
 import com.enterprise.integrated.dto.MenuMoveRequest;
+import com.enterprise.integrated.annotation.RateLimit;
 import com.enterprise.integrated.service.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,6 +36,7 @@ public class MenuController {
     @Operation(summary = "查询菜单树", description = "获取菜单树结构")
     @GetMapping("/tree")
     @PreAuthorize("hasAuthority('perm:system:menu:query') or hasRole('ADMIN')")
+    @RateLimit(key = "menu_tree", count = 60, time = 60, limitType = RateLimit.LimitType.IP)
     public java.util.List<MenuNode> getMenuTree() {
         return permissionService.getMenuTree();
     }
@@ -86,8 +88,11 @@ public class MenuController {
     @Operation(summary = "可见菜单树", description = "当前登录用户可见的菜单树")
     @GetMapping("/tree/visible")
     @PreAuthorize("isAuthenticated()")
-    public java.util.List<MenuNode> getVisibleMenuTreeForCurrentUser() {
-        return permissionService.getVisibleMenuTreeForCurrentUser();
+    @RateLimit(key = "visible_menu_tree", count = 120, time = 60, limitType = RateLimit.LimitType.USER)
+    public java.util.List<MenuNode> getVisibleMenuTreeForCurrentUser(
+            @RequestParam(defaultValue = "true") boolean menuOnly,
+            @RequestParam(defaultValue = "false") boolean pruneEmpty) {
+        return permissionService.getVisibleMenuTreeForCurrentUser(menuOnly, pruneEmpty);
     }
 }
 

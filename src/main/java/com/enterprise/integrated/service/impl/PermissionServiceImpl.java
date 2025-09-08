@@ -16,6 +16,9 @@ import java.util.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.enterprise.integrated.security.UserDetailsServiceImpl;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CacheEvict;
 
 @Service
 public class PermissionServiceImpl implements PermissionService {
@@ -27,6 +30,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = {"menuTree", "visibleMenuTree"}, allEntries = true)
     public Permission createMenu(MenuCreateRequest request) {
         if (!StringUtils.hasText(request.getName()) || !StringUtils.hasText(request.getCode())) {
             throw new BusinessException(ResultCode.PARAM_MISSING, "菜单名称或编码不能为空");
@@ -43,6 +48,13 @@ public class PermissionServiceImpl implements PermissionService {
         // 根节点 parentId 允许 0；若非 0 可进一步校验父节点存在
         if (request.getParentId() == null) {
             request.setParentId(0L);
+        }
+        // 校验父节点
+        if (request.getParentId() != 0) {
+            Permission parent = permissionMapper.selectById(request.getParentId());
+            if (parent == null || parent.getPermissionType() == null || parent.getPermissionType() != 1 || parent.getStatus() == 0) {
+                throw new BusinessException(ResultCode.PARAM_INVALID, "父菜单不存在或不可用");
+            }
         }
 
         Permission permission = new Permission();
@@ -63,6 +75,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Cacheable(cacheNames = "menuTree", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<MenuNode> getMenuTree() {
         List<Permission> menus = permissionMapper.selectList(new QueryWrapper<Permission>()
                 .eq("permission_type", 1)
@@ -100,6 +113,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = {"menuTree", "visibleMenuTree"}, allEntries = true)
     public Permission updateMenu(Long id, MenuCreateRequest request) {
         Permission exist = permissionMapper.selectById(id);
         if (exist == null || exist.getPermissionType() == null || exist.getPermissionType() != 1) {
@@ -115,19 +130,30 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ResultCode.DATA_ALREADY_EXISTS, "菜单编码已存在");
             }
         }
+        // 父节点校验
+        Long parentId = request.getParentId() == null ? 0L : request.getParentId();
+        if (parentId != 0) {
+            Permission parent = permissionMapper.selectById(parentId);
+            if (parent == null || parent.getPermissionType() == null || parent.getPermissionType() != 1 || parent.getStatus() == 0) {
+                throw new BusinessException(ResultCode.PARAM_INVALID, "父菜单不存在或不可用");
+            }
+        }
+
         UpdateWrapper<Permission> uw = new UpdateWrapper<>();
         uw.eq("id", id)
           .set(StringUtils.hasText(request.getName()), "permission_name", request.getName())
           .set(StringUtils.hasText(request.getCode()), "permission_code", request.getCode())
           .set("permission_type", 1)
           .set("path", request.getPath())
-          .set("parent_id", request.getParentId() == null ? 0L : request.getParentId())
+          .set("parent_id", parentId)
           .set(request.getSortOrder() != null, "sort_order", request.getSortOrder());
         permissionMapper.update(null, uw);
         return permissionMapper.selectById(id);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = {"menuTree", "visibleMenuTree"}, allEntries = true)
     public void deleteMenu(Long id) {
         // 有子节点不可删
         Long children = permissionMapper.selectCount(new QueryWrapper<Permission>()
@@ -142,6 +168,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = {"menuTree", "visibleMenuTree"}, allEntries = true)
     public void batchUpdateSort(List<MenuSortItem> items) {
         if (items == null || items.isEmpty()) {
             return;
@@ -154,6 +182,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = {"menuTree", "visibleMenuTree"}, allEntries = true)
     public void deleteMenuCascade(Long id) {
         // 递归标记删除
         Deque<Long> stack = new ArrayDeque<>();
@@ -174,6 +204,8 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    @CacheEvict(cacheNames = {"menuTree", "visibleMenuTree"}, allEntries = true)
     public void moveMenu(com.enterprise.integrated.dto.MenuMoveRequest request) {
         Permission current = permissionMapper.selectById(request.getId());
         if (current == null || current.getPermissionType() == null || current.getPermissionType() != 1) {
@@ -182,6 +214,12 @@ public class PermissionServiceImpl implements PermissionService {
         Long newParentId = request.getNewParentId() == null ? 0L : request.getNewParentId();
         if (Objects.equals(current.getId(), newParentId)) {
             throw new BusinessException(ResultCode.PARAM_INVALID, "父节点不能是自身");
+        }
+        if (newParentId != 0) {
+            Permission parent = permissionMapper.selectById(newParentId);
+            if (parent == null || parent.getPermissionType() == null || parent.getPermissionType() != 1 || parent.getStatus() == 0) {
+                throw new BusinessException(ResultCode.PARAM_INVALID, "父菜单不存在或不可用");
+            }
         }
         // 循环依赖校验：新父节点不能是当前节点的子孙
         if (newParentId != 0) {
@@ -209,12 +247,59 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Override
     public List<MenuNode> getVisibleMenuTreeForCurrentUser() {
+        return getVisibleMenuTreeForCurrentUser(true, false);
+    }
+
+    @Override
+    @Cacheable(
+        cacheNames = "visibleMenuTree",
+        key = "T(org.springframework.security.core.context.SecurityContextHolder).getContext().getAuthentication()?.getPrincipal()?.getUserId() + ':' + #menuOnly + ':' + #pruneEmpty",
+        unless = "#result == null || #result.isEmpty()")
+    public List<MenuNode> getVisibleMenuTreeForCurrentUser(boolean menuOnly, boolean pruneEmpty) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !(auth.getPrincipal() instanceof UserDetailsServiceImpl.CustomUserDetails)) {
             return Collections.emptyList();
         }
         UserDetailsServiceImpl.CustomUserDetails user = (UserDetailsServiceImpl.CustomUserDetails) auth.getPrincipal();
-        List<Permission> menus = permissionMapper.findMenusByUserId(user.getUserId());
+        // 用户拥有的菜单（当前实现仅菜单类型）
+        List<Permission> userMenus = permissionMapper.findMenusByUserId(user.getUserId());
+        if (userMenus.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        // 查询所有菜单，用于补齐祖先节点
+        List<Permission> allMenus = permissionMapper.selectList(new QueryWrapper<Permission>()
+                .eq("permission_type", 1)
+                .eq("deleted", 0));
+        Map<Long, Permission> allMap = new HashMap<>();
+        for (Permission p : allMenus) {
+            allMap.put(p.getId(), p);
+        }
+
+        // 计算应包含的ID集合 = 用户直接拥有 + 其所有祖先
+        Set<Long> includeIds = new LinkedHashSet<>();
+        for (Permission p : userMenus) {
+            Long cur = p.getId();
+            while (cur != null && cur != 0 && includeIds.add(cur)) {
+                Permission parent = allMap.get(cur);
+                if (parent == null) break;
+                cur = parent.getParentId();
+                if (cur != null && cur == 0) {
+                    includeIds.add(parent.getId());
+                }
+            }
+            // 补齐当前节点的直接父级（处理父级为0或null场景）
+            if (p.getParentId() != null) {
+                includeIds.add(p.getParentId());
+            }
+        }
+
+        // 按 parentId/sort/id 排序后构建树
+        List<Permission> menus = new ArrayList<>();
+        for (Long id : includeIds) {
+            Permission pm = allMap.get(id);
+            if (pm != null) menus.add(pm);
+        }
         menus.sort(Comparator.comparing(Permission::getParentId, Comparator.nullsFirst(Long::compareTo))
                 .thenComparing(p -> Optional.ofNullable(p.getSortOrder()).orElse(0))
                 .thenComparing(Permission::getId));
@@ -244,7 +329,25 @@ public class PermissionServiceImpl implements PermissionService {
                 }
             }
         }
+        if (pruneEmpty) {
+            roots = pruneEmptyNodes(roots);
+        }
         return roots;
+    }
+
+    private List<MenuNode> pruneEmptyNodes(List<MenuNode> nodes) {
+        List<MenuNode> result = new ArrayList<>();
+        for (MenuNode node : nodes) {
+            List<MenuNode> prunedChildren = pruneEmptyNodes(node.getChildren());
+            node.setChildren(prunedChildren);
+            if (prunedChildren.isEmpty()) {
+                // 叶子节点，保留（保守策略：菜单节点即保留）
+                result.add(node);
+            } else {
+                result.add(node);
+            }
+        }
+        return result;
     }
 }
 
