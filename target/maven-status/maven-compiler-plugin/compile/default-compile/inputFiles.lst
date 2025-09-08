@@ -4,7 +4,6 @@
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/mapper/OperationLogMapper.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/config/RedisConfig.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/entity/OperationLog.java
-/Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/controller/DemoController.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/validator/PhoneValidator.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/common/base/BaseEntity.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/security/UserDetailsServiceImpl.java
@@ -18,6 +17,7 @@
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/annotation/OperationLog.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/service/SystemConfigService.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/config/I18nConfig.java
+/Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/common/exception/ServiceException.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/service/impl/AuthServiceImpl.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/config/ApiVersionRequestMappingHandlerMapping.java
 /Users/alone/Desktop/integrated-services-java17/src/main/java/com/enterprise/integrated/controller/HealthController.java

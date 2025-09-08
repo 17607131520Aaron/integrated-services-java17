@@ -12,7 +12,6 @@ com/enterprise/integrated/common/result/Result.class
 com/enterprise/integrated/controller/UserController.class
 com/enterprise/integrated/service/impl/AuthServiceImpl.class
 com/enterprise/integrated/entity/SystemConfig.class
-com/enterprise/integrated/controller/DemoController$ValidationRequest.class
 com/enterprise/integrated/config/ApiVersionConfig.class
 com/enterprise/integrated/service/UserService.class
 com/enterprise/integrated/config/MybatisPlusConfig$MyMetaObjectHandler.class
@@ -65,5 +64,4 @@ com/enterprise/integrated/mapper/UserMapper.class
 com/enterprise/integrated/annotation/Desensitize.class
 com/enterprise/integrated/config/RedisConfig.class
 com/enterprise/integrated/annotation/IgnoreResponseWrapper.class
-com/enterprise/integrated/controller/DemoController.class
 com/enterprise/integrated/handler/GlobalResponseHandler.class
