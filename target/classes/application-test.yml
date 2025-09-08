@@ -46,4 +46,9 @@ knife4j:
 spring.cloud.sentinel:
   enabled: false
 
+app:
+  security:
+    permit-swagger: true
+    permit-druid: true
+
 

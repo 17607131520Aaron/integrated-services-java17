@@ -18,6 +18,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.enterprise.integrated.common.result.Result;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.beans.factory.annotation.Value;
 
 /**
  * Spring Security 配置类
@@ -31,6 +32,12 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Value("${app.security.permit-swagger:false}")
+    private boolean permitSwagger;
+
+    @Value("${app.security.permit-druid:false}")
+    private boolean permitDruid;
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -79,6 +86,16 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/error"
                         ).permitAll()
+                        // 按需放行 Swagger/Knife4j 与 Druid（通常仅 test 或特定环境开启）
+                        .requestMatchers(permitSwagger ? new String[]{
+                                "/doc.html",
+                                "/swagger-ui/**",
+                                "/v3/api-docs/**",
+                                "/webjars/**"
+                        } : new String[]{}).permitAll()
+                        .requestMatchers(permitDruid ? new String[]{
+                                "/druid/**"
+                        } : new String[]{}).permitAll()
                         // 仅健康检查放行
                         .requestMatchers("/actuator/health").permitAll()
                         // 其他所有请求需要认证
