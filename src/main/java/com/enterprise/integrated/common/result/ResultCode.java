@@ -9,10 +9,13 @@ package com.enterprise.integrated.common.result;
 public enum ResultCode {
 
     // 成功
-    SUCCESS(200, "操作成功"),
+    SUCCESS(0, "操作成功"),
 
+    // 默认异常
+    ERROR(9000, "操作失败"),
+    
     // 客户端错误 4xx
-    ERROR(400, "操作失败"),
+    BAD_REQUEST(400, "请求错误"),
     PARAM_ERROR(400, "参数错误"),
     PARAM_MISSING(400, "缺少必要参数"),
     PARAM_INVALID(400, "参数格式不正确"),

@@ -49,6 +49,15 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理服务异常
+     */
+    @ExceptionHandler(ServiceException.class)
+    public Result<Object> handleServiceException(ServiceException ex, HttpServletRequest request) {
+        log.warn("服务异常 - URI: {}, Code: {}, Message: {}", request.getRequestURI(), ex.getCode(), ex.getMessage());
+        return Result.error(ex.getCode(), ex.getMessage(), ex.getData());
+    }
+
+    /**
      * 处理参数验证异常
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)

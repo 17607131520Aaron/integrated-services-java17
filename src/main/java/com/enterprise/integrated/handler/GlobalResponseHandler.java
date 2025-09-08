@@ -2,13 +2,17 @@ package com.enterprise.integrated.handler;
 
 import com.enterprise.integrated.annotation.IgnoreResponseWrapper;
 import com.enterprise.integrated.common.result.Result;
+import com.enterprise.integrated.common.result.ResultCode;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.core.MethodParameter;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
+import org.springframework.http.server.ServletServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 
@@ -58,7 +62,40 @@ public class GlobalResponseHandler implements ResponseBodyAdvice<Object> {
     public Object beforeBodyWrite(Object body, MethodParameter returnType, MediaType selectedContentType,
                                 Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                 ServerHttpRequest request, ServerHttpResponse response) {
-        
+        // 非2xx状态码不包装为成功
+        int status = 200;
+        if (response instanceof ServletServerHttpResponse servletResp) {
+            HttpServletResponse raw = servletResp.getServletResponse();
+            status = raw.getStatus();
+        }
+
+        if (status >= 400) {
+            // 根据常见状态码映射统一错误结果
+            if (status == HttpStatus.UNAUTHORIZED.value()) {
+                return Result.error(ResultCode.UNAUTHORIZED);
+            }
+            if (status == HttpStatus.FORBIDDEN.value()) {
+                return Result.error(ResultCode.FORBIDDEN);
+            }
+            if (status == HttpStatus.NOT_FOUND.value()) {
+                return Result.error(ResultCode.NOT_FOUND);
+            }
+            if (status >= 500) {
+                return Result.error(ResultCode.INTERNAL_ERROR);
+            }
+            // 其他4xx：尽量从默认错误体中提取 message
+            String message = null;
+            if (body instanceof java.util.Map<?, ?> map) {
+                Object msg = map.get("message");
+                Object err = map.get("error");
+                message = msg != null ? String.valueOf(msg) : (err != null ? String.valueOf(err) : null);
+            }
+            if (message == null) {
+                message = HttpStatus.resolve(status) != null ? HttpStatus.resolve(status).getReasonPhrase() : "请求错误";
+            }
+            return Result.error(status, message, body);
+        }
+
         // 如果返回值为null，包装成功响应
         if (body == null) {
             return Result.success();

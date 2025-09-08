@@ -66,6 +66,13 @@ public class Result<T> implements Serializable {
     }
 
     /**
+     * 成功返回带自定义消息
+     */
+    public static <T> Result<T> success(String message) {
+        return new Result<>(ResultCode.SUCCESS.getCode(), message);
+    }
+
+    /**
      * 失败返回
      */
     public static <T> Result<T> error() {
