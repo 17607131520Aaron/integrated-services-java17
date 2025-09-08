@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.enterprise.integrated.mapper.SystemConfigMapper">
+
+    <resultMap id="SystemConfigResultMap" type="com.enterprise.integrated.entity.SystemConfig">
+        <id property="id" column="id" />
+        <result property="configKey" column="config_key" />
+        <result property="configValue" column="config_value" />
+        <result property="description" column="description" />
+        <result property="type" column="config_type" />
+        <result property="status" column="is_system" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+        <result property="createBy" column="create_by" />
+        <result property="updateBy" column="update_by" />
+        <result property="deleted" column="deleted" />
+        <result property="version" column="version" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, config_key, config_value, description, config_type, is_system,
+        create_time, update_time, create_by, update_by, deleted, version
+    </sql>
+
+    <select id="pageConfigs" resultMap="SystemConfigResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_config
+        <where>
+            <if test="configKey != null and configKey != ''">
+                AND config_key LIKE CONCAT('%', #{configKey}, '%')
+            </if>
+            <if test="type != null and type != ''">
+                AND config_type = #{type}
+            </if>
+            <if test="status != null">
+                AND is_system = #{status}
+            </if>
+            AND deleted = 0
+        </where>
+        ORDER BY update_time DESC
+    </select>
+
+    <select id="findByConfigKey" resultMap="SystemConfigResultMap" parameterType="string">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_config
+        WHERE config_key = #{configKey}
+          AND deleted = 0
+        LIMIT 1
+    </select>
+
+</mapper>
+
+

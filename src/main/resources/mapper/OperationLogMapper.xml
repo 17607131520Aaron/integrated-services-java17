@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.enterprise.integrated.mapper.OperationLogMapper">
+
+    <resultMap id="OperationLogResultMap" type="com.enterprise.integrated.entity.OperationLog">
+        <id property="id" column="id" />
+        <result property="userId" column="user_id" />
+        <result property="username" column="username" />
+        <result property="operation" column="operation" />
+        <result property="operationType" column="operation_type" />
+        <result property="method" column="method" />
+        <result property="requestUrl" column="request_url" />
+        <result property="requestParams" column="params" />
+        <result property="response" column="result" />
+        <result property="ipAddress" column="ip" />
+        <result property="userAgent" column="user_agent" />
+        <result property="executionTime" column="execute_time" />
+        <result property="status" column="status" />
+        <result property="errorMessage" column="error_msg" />
+        <result property="createTime" column="create_time" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, user_id, username, operation, method, params, result, ip, user_agent,
+        execute_time, status, error_msg, create_time
+    </sql>
+
+    <select id="pageOperationLogs" resultMap="OperationLogResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_operation_log
+        <where>
+            <if test="username != null and username != ''">
+                AND username LIKE CONCAT('%', #{username}, '%')
+            </if>
+            <if test="operation != null and operation != ''">
+                AND operation LIKE CONCAT('%', #{operation}, '%')
+            </if>
+            <if test="status != null">
+                AND status = #{status}
+            </if>
+            <if test="startTime != null and startTime != ''">
+                AND create_time &gt;= #{startTime}
+            </if>
+            <if test="endTime != null and endTime != ''">
+                AND create_time &lt;= #{endTime}
+            </if>
+        </where>
+        ORDER BY create_time DESC
+    </select>
+
+</mapper>
+
+

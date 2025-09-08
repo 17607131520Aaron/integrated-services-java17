@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.enterprise.integrated.mapper.PermissionMapper">
+
+    <resultMap id="PermissionResultMap" type="com.enterprise.integrated.entity.Permission">
+        <id property="id" column="id" />
+        <result property="parentId" column="parent_id" />
+        <result property="permissionName" column="permission_name" />
+        <result property="permissionCode" column="permission_code" />
+        <result property="permissionType" column="permission_type" />
+        <result property="path" column="path" />
+        <result property="method" column="method" />
+        <result property="sortOrder" column="sort_order" />
+        <result property="status" column="status" />
+        <result property="createTime" column="create_time" />
+        <result property="updateTime" column="update_time" />
+        <result property="createBy" column="create_by" />
+        <result property="updateBy" column="update_by" />
+        <result property="deleted" column="deleted" />
+        <result property="version" column="version" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        p.id, p.parent_id, p.permission_name, p.permission_code, p.permission_type,
+        p.path, p.method, p.sort_order, p.status,
+        p.create_time, p.update_time, p.create_by, p.update_by, p.deleted, p.version
+    </sql>
+
+    <select id="findPermissionsByUserId" resultMap="PermissionResultMap" parameterType="long">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND p.deleted = 0
+          AND p.status = 1
+    </select>
+
+    <select id="findMenusByUserId" resultMap="PermissionResultMap" parameterType="long">
+        SELECT DISTINCT <include refid="Base_Column_List" />
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND p.deleted = 0
+          AND p.status = 1
+          AND p.permission_type = 1
+    </select>
+
+    <select id="pagePermissionsByUserId" resultMap="PermissionResultMap">
+        SELECT <include refid="Base_Column_List" />
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND p.deleted = 0
+          AND p.status = 1
+    </select>
+
+    <select id="pageMenusByUserId" resultMap="PermissionResultMap">
+        SELECT DISTINCT <include refid="Base_Column_List" />
+        FROM sys_permission p
+        INNER JOIN sys_role_permission rp ON p.id = rp.permission_id
+        INNER JOIN sys_user_role ur ON rp.role_id = ur.role_id
+        WHERE ur.user_id = #{userId}
+          AND p.deleted = 0
+          AND p.status = 1
+          AND p.permission_type = 1
+    </select>
+
+</mapper>
+
+
