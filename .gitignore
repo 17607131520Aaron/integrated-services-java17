@@ -22,3 +22,54 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+# Maven build output
+target/
+pom.xml.versionsBackup
+release.properties
+dependency-reduced-pom.xml
+
+# Gradle (in case used by tools)
+.gradle/
+build/
+
+# IDE files
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+# logs/
+# *.tmp
+# *.swp
+# *.swo
+
+# Spring tooling caches
+.sts4-cache/
+.springBeans
+
+# Environment files
+.env
+.env.*
+!*.env.example
+
+# Coverage/Reports
+coverage/
+jacoco.exec
+site/
+
+# Local docker env files
+docker/*.env
+
+# Merge/patch artifacts
+*.orig
+*.rej
