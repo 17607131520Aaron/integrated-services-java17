@@ -6,6 +6,7 @@ import com.enterprise.integrated.dto.LoginRequest;
 import com.enterprise.integrated.dto.LoginResponse;
 import com.enterprise.integrated.dto.UserDTO;
 import com.enterprise.integrated.entity.User;
+import com.enterprise.integrated.security.UserDetailsServiceImpl;
 import com.enterprise.integrated.service.AuthService;
 import com.enterprise.integrated.service.UserService;
 import com.enterprise.integrated.utils.JwtUtils;
@@ -147,24 +148,23 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginResponse getCurrentUser() {
+    public UserDTO getCurrentUser() {
         // 从Security上下文获取当前用户
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             throw new BusinessException(ResultCode.UNAUTHORIZED, "用户未登录");
         }
 
-        String username = authentication.getName();
-        User user = userService.findByUsername(username);
-        if (user == null) {
-            throw new BusinessException(ResultCode.DATA_NOT_FOUND, "用户不存在");
-        }
-
+        UserDetailsServiceImpl.CustomUserDetails userDetails = 
+            (UserDetailsServiceImpl.CustomUserDetails) authentication.getPrincipal();
+        
+        User user = userDetails.getUser();
+        
         // 构建用户信息
         UserDTO userDTO = new UserDTO();
         BeanUtils.copyProperties(user, userDTO);
 
-        return new LoginResponse(null, null, null, userDTO);
+        return userDTO;
     }
 
     @Override

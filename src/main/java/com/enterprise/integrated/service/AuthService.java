@@ -2,6 +2,7 @@ package com.enterprise.integrated.service;
 
 import com.enterprise.integrated.dto.LoginRequest;
 import com.enterprise.integrated.dto.LoginResponse;
+import com.enterprise.integrated.dto.UserDTO;
 
 /**
  * 认证服务接口
@@ -39,7 +40,7 @@ public interface AuthService {
      * 
      * @return 当前用户信息
      */
-    LoginResponse getCurrentUser();
+    UserDTO getCurrentUser();
 
     /**
      * 验证令牌

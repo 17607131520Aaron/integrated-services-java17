@@ -47,11 +47,15 @@ public enum ResultCode {
     DATABASE_ERROR(7000, "数据库操作失败"),
     DATABASE_CONNECTION_ERROR(7001, "数据库连接失败"),
     
-    // 缓存错误 8xxx
-    CACHE_ERROR(8000, "缓存操作失败"),
+    // 外部服务错误 (70xx)
+    EXTERNAL_SERVICE_ERROR(7002, "外部服务调用失败"),
+    EXTERNAL_SERVICE_TIMEOUT(7003, "外部服务调用超时"),
+    EXTERNAL_SERVICE_UNAVAILABLE(7004, "外部服务不可用"),
     
-    // 外部服务错误 9xxx
-    EXTERNAL_SERVICE_ERROR(9000, "外部服务调用失败"),
+    // 缓存错误 8xxx
+    CACHE_ERROR(8001, "缓存操作失败"),
+    
+    // 网络错误 9xxx
     NETWORK_ERROR(9001, "网络连接异常");
 
     private final Integer code;
