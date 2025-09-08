@@ -2,6 +2,7 @@ package com.enterprise.integrated.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -13,6 +14,7 @@ import java.io.Serializable;
 @Schema(description = "登录响应")
 public class LoginResponse implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "访问令牌")

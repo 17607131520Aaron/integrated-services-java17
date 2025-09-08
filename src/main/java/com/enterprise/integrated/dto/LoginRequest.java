@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 
+import java.io.Serial;
 import java.io.Serializable;
 
 /**
@@ -15,6 +16,7 @@ import java.io.Serializable;
 @Schema(description = "登录请求")
 public class LoginRequest implements Serializable {
 
+    @Serial
     private static final long serialVersionUID = 1L;
 
     @Schema(description = "用户名", example = "admin")
